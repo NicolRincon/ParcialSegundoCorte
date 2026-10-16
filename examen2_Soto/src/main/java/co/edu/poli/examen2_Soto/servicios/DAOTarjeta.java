@@ -11,112 +11,133 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
+/**
+ * Clase de acceso a datos (DAO) encargada de gestionar las operaciones CRUD 
+ * para la entidad {@link Tarjeta} y sus subtipos (Débito y Crédito) en la base de datos MySQL.
+ */
 public class DAOTarjeta implements CRUD<Tarjeta> {
 
+	/**
+	 * Registra una nueva tarjeta (Débito o Crédito) en la base de datos utilizando transacciones JDBC.
+	 * Asegura que se guarde tanto en la tabla general de tarjetas como en su respectiva tabla específica,
+	 * aplicando rollback en caso de fallo.
+	 * 
+	 * @param t Objeto Tarjeta a registrar (puede ser instancia de {@link Debito} o {@link Credito}).
+	 * @return Un mensaje de texto confirmando el éxito de la operación.
+	 * @throws Exception si ocurre un error de SQL, validación o conectividad.
+	 */
+	@Override
+	public String create(Tarjeta t) throws Exception {
 
-@Override
-public String create(Tarjeta t) throws Exception {
+		if (t == null) {
+			throw new IllegalArgumentException(
+				"La tarjeta no puede ser nula."
+			);
+		}
 
-    if (t == null) {
-        throw new IllegalArgumentException(
-            "La tarjeta no puede ser nula."
-        );
-    }
+		if (t.getEstado() == null) {
+			throw new IllegalArgumentException(
+				"El estado de la tarjeta es obligatorio."
+			);
+		}
 
-    if (t.getEstado() == null) {
-        throw new IllegalArgumentException(
-            "El estado de la tarjeta es obligatorio."
-        );
-    }
+		if (!(t instanceof Debito) && !(t instanceof Credito)) {
+			throw new IllegalArgumentException(
+				"El tipo de tarjeta no es válido."
+			);
+		}
 
-    if (!(t instanceof Debito) && !(t instanceof Credito)) {
-        throw new IllegalArgumentException(
-            "El tipo de tarjeta no es válido."
-        );
-    }
+		Connection con = ConexionBD.getInstancia().getConexion();
+		boolean autoCommitAnterior = con.getAutoCommit();
 
-    Connection con = ConexionBD.getInstancia().getConexion();
-    boolean autoCommitAnterior = con.getAutoCommit();
+		try {
+			con.setAutoCommit(false);
 
-    try {
-        con.setAutoCommit(false);
+			String sqlTarjeta =
+				"INSERT INTO tarjeta " +
+				"(numero, fecha_exp, estado, titular_id) " +
+				"VALUES (?, ?, ?, ?)";
 
-        String sqlTarjeta =
-            "INSERT INTO tarjeta " +
-            "(numero, fecha_exp, estado, titular_id) " +
-            "VALUES (?, ?, ?, ?)";
+			try (PreparedStatement ps =
+					con.prepareStatement(sqlTarjeta)) {
 
-        try (PreparedStatement ps =
-                con.prepareStatement(sqlTarjeta)) {
+				ps.setString(1, t.getNumero());
+				ps.setString(2, t.getFechaExp());
+				ps.setString(3, t.getEstado().name());
+				ps.setString(4, t.getTitular().getId());
 
-            ps.setString(1, t.getNumero());
-            ps.setString(2, t.getFechaExp());
-            ps.setString(3, t.getEstado().name());
-            ps.setString(4, t.getTitular().getId());
+				ps.executeUpdate();
+			}
 
-            ps.executeUpdate();
-        }
+			if (t instanceof Debito) {
 
-        if (t instanceof Debito) {
+				String sqlDebito =
+					"INSERT INTO tarjeta_debito (numero, saldo) " +
+					"VALUES (?, ?)";
 
-            String sqlDebito =
-                "INSERT INTO tarjeta_debito (numero, saldo) " +
-                "VALUES (?, ?)";
+				try (PreparedStatement ps =
+						con.prepareStatement(sqlDebito)) {
 
-            try (PreparedStatement ps =
-                    con.prepareStatement(sqlDebito)) {
+					ps.setString(1, t.getNumero());
+					ps.setDouble(2, ((Debito) t).getSaldo());
 
-                ps.setString(1, t.getNumero());
-                ps.setDouble(2, ((Debito) t).getSaldo());
+					ps.executeUpdate();
+				}
 
-                ps.executeUpdate();
-            }
+			} else {
 
-        } else {
+				String sqlCredito =
+					"INSERT INTO tarjeta_credito (numero, limite) " +
+					"VALUES (?, ?)";
 
-            String sqlCredito =
-                "INSERT INTO tarjeta_credito (numero, limite) " +
-                "VALUES (?, ?)";
+				try (PreparedStatement ps =
+						con.prepareStatement(sqlCredito)) {
 
-            try (PreparedStatement ps =
-                    con.prepareStatement(sqlCredito)) {
+					ps.setString(1, t.getNumero());
+					ps.setDouble(2, ((Credito) t).getLimite());
 
-                ps.setString(1, t.getNumero());
-                ps.setDouble(2, ((Credito) t).getLimite());
+					ps.executeUpdate();
+				}
+			}
 
-                ps.executeUpdate();
-            }
-        }
+			con.commit();
 
-        con.commit();
+			return "Tarjeta " + t.getNumero()
+				+ " guardada correctamente con estado "
+				+ t.getEstado().name() + ".";
 
-        return "Tarjeta " + t.getNumero()
-            + " guardada correctamente con estado "
-            + t.getEstado().name() + ".";
+		} catch (Exception e) {
 
-    } catch (Exception e) {
+			try {
+				con.rollback();
+			} catch (Exception errorRollback) {
+				e.addSuppressed(errorRollback);
+			}
 
-        try {
-            con.rollback();
-        } catch (Exception errorRollback) {
-            e.addSuppressed(errorRollback);
-        }
+			throw e;
 
-        throw e;
+		} finally {
+			con.setAutoCommit(autoCommitAnterior);
+		}
+	}
 
-    } finally {
-        con.setAutoCommit(autoCommitAnterior);
-    }
-}
-
+	/**
+	 * Busca y retorna una tarjeta específica según su número identificador,
+	 * verificando primero en las tarjetas de débito y posteriormente en las de crédito.
+	 * 
+	 * @param <K> Tipo de dato de la clave de búsqueda (generalmente String).
+	 * @param num Número de la tarjeta que se desea consultar.
+	 * @return Un objeto {@link Debito} o {@link Credito} si se encuentra, o null en caso contrario.
+	 * @throws Exception si ocurre un error al ejecutar la consulta SQL.
+	 */
 	@Override
 	public <K> Tarjeta readone(K num) throws Exception {
 
 		Connection con = ConexionBD.getInstancia().getConexion();
 
-		String SQL_SELECT_DEBITO = "SELECT  t.numero, t.fecha_exp, t.estado, "
+		String SQL_SELECT_DEBITO = "SELECT   t.numero, t.fecha_exp, t.estado, "
 				+ "        ti.id AS titular_id, ti.nombre AS titular_nombre, " + "        d.saldo "
-				+ "FROM    tarjeta_debito d " + "INNER JOIN tarjeta  t  ON d.numero     = t.numero "
+				+ "FROM    tarjeta_debito d " + "INNER JOIN tarjeta  t  ON d.numero      = t.numero "
 				+ "INNER JOIN titular  ti ON t.titular_id = ti.id " + "WHERE   d.numero = ?";
 
 		PreparedStatement ps = con.prepareStatement(SQL_SELECT_DEBITO);
@@ -127,9 +148,9 @@ public String create(Tarjeta t) throws Exception {
 					new Titular(rs.getString("titular_id"), rs.getString("titular_nombre")), rs.getDouble("saldo"));
 		}
 
-		String SQL_SELECT_CREDITO = "SELECT  t.numero, t.fecha_exp, t.estado, "
+		String SQL_SELECT_CREDITO = "SELECT   t.numero, t.fecha_exp, t.estado, "
 				+ "        ti.id AS titular_id, ti.nombre AS titular_nombre, " + "        c.limite "
-				+ "FROM    tarjeta_credito c " + "INNER JOIN tarjeta  t  ON c.numero     = t.numero "
+				+ "FROM    tarjeta_credito c " + "INNER JOIN tarjeta  t  ON c.numero      = t.numero "
 				+ "INNER JOIN titular  ti ON t.titular_id = ti.id " + "WHERE   c.numero = ?";
 
 		ps = con.prepareStatement(SQL_SELECT_CREDITO);
@@ -143,6 +164,12 @@ public String create(Tarjeta t) throws Exception {
 		return null;
 	}
 
+	/**
+	 * Retorna una lista con todas las tarjetas registradas en el sistema.
+	 * (Método pendiente de implementación completa según los requerimientos del proyecto).
+	 * 
+	 * @return Lista de tarjetas (actualmente null).
+	 */
 	@Override
 	public List<Tarjeta> readall() {
 		return null;
