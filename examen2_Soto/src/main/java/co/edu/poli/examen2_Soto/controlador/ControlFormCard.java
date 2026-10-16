@@ -24,6 +24,10 @@ import javafx.scene.control.ToggleGroup;
 import javafx.application.Platform;
 import co.edu.poli.examen2_Soto.modelo.EstadoTarjeta;
 
+/**
+ * Controlador de la interfaz gráfica para la gestión y control de tarjetas.
+ * Maneja las operaciones de consulta, creación y validación de datos en el formulario FXML.
+ */
 public class ControlFormCard {
 
 	@FXML
@@ -49,10 +53,16 @@ public class ControlFormCard {
 	@FXML
 	private ToggleGroup tipo;
 
+	/** Objeto DAO para interactuar con las operaciones de tarjetas en la base de datos. */
 	private DAOTarjeta daoTarjeta;
 
+	/** Objeto DAO para gestionar la información de los titulares. */
 	private DAOTitular daoTitular;
 
+	/**
+	 * Método de inicialización ejecutado automáticamente al cargar la vista FXML.
+	 * Configura los DAOs, establece valores por defecto y añade los listeners de validación.
+	 */
 	@FXML
 	private void initialize() {
 		daoTarjeta = new DAOTarjeta();
@@ -81,6 +91,11 @@ public class ControlFormCard {
 
 	}
 
+	/**
+	 * Maneja el evento de consulta de una tarjeta por su número identificador.
+	 * 
+	 * @param event Evento de acción disparado por el botón de consulta.
+	 */
 	@FXML
 	private void pressConsulta(ActionEvent event) {
 		txtAreaResultado.setText("");
@@ -99,6 +114,12 @@ public class ControlFormCard {
 			mostrarAlerta("Ingrese número de tarjeta");
 	}
 
+	/**
+	 * Maneja el evento de creación y registro de una nueva tarjeta (Débito o Crédito)
+	 * validando que todos los campos requeridos estén completos.
+	 * 
+	 * @param event Evento de acción disparado por el botón de creación.
+	 */
 	@FXML
 	private void pressCreacion(ActionEvent event) {
 
@@ -148,6 +169,11 @@ public class ControlFormCard {
 
 	}
 
+	/**
+	 * Despliega una ventana emergente de alerta informativa para el usuario.
+	 * 
+	 * @param mensaje Texto que se mostrará dentro de la alerta.
+	 */
 	private void mostrarAlerta(String mensaje) {
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setTitle("Resultado");
@@ -156,6 +182,9 @@ public class ControlFormCard {
 		alert.showAndWait();
 	}
 
+	/**
+	 * Limpia y restablece los campos del formulario de creación a sus valores iniciales.
+	 */
 	private void limpiarFormCrear() {
 		txtTarjeta2.clear();
 		datepk1.setValue(null);
@@ -164,6 +193,12 @@ public class ControlFormCard {
 		radio1.setSelected(true);
 	}
 
+	/**
+	 * Valida que el texto ingresado en un campo numérico contenga exclusivamente dígitos.
+	 * Si se detecta un carácter no válido, marca el borde de rojo y muestra una advertencia.
+	 * 
+	 * @param txt Campo de texto (TextField) a validar.
+	 */
 	private void validarSoloNumeros(TextField txt) {
 		String texto = txt.getText().trim();
 		if (!texto.isBlank()) {
