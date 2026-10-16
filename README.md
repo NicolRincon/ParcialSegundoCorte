@@ -41,4 +41,32 @@ Justificación: la historia atraviesa todas las capas de la aplicación (modelo,
 ## Estructura del repositorio
 
 | Ruta | Contenido |
-|--
+|---|---|
+| examen2_Soto/ | Proyecto Maven con el código fuente y las pruebas |
+| ScriptDB.sql | Script de la base de datos MySQL actualizado |
+
+## Base de datos
+
+Ejecutar ScriptDB.sql en MySQL (versión 8.0.16 o superior, por la restricción CHECK). Crea la base examen2_soto con sus tablas y datos de prueba.
+
+## Configuración y ejecución
+
+1. Crear en la carpeta examen2_Soto un archivo llamado .env con estas variables:
+
+```
+DB_URL=jdbc:mysql://localhost:3306/examen2_soto
+DB_USER=su_usuario
+DB_PASSWORD=su_clave
+```
+
+2. Encender el servicio de MySQL.
+3. Ejecutar la aplicación: clase vista/App.java, con Run As, Java Application.
+4. Ejecutar las pruebas: clic derecho sobre la clase de prueba, Run As, JUnit Test. Las de tests/integracion necesitan la base de datos.
+
+## Uso de inteligencia artificial
+
+Se usó Claude como apoyo para analizar el proyecto, proponer el diseño y generar el código base, que luego fue aplicado, probado y ajustado en el entorno de desarrollo.
+
+## Wiki
+
+El diagrama UML actualizado y el video de la entrega están en la wiki del repositorio.
