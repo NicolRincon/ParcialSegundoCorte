@@ -1,29 +1,46 @@
 package co.edu.poli.examen2_Soto.modelo;
 
+/**
+ * Enumeración que representa los diferentes estados posibles que puede tener una tarjeta en el sistema.
+ */
 public enum EstadoTarjeta {
 
+	/** Estado que indica que la tarjeta se encuentra activa y operativa. */
 	ACTIVA("Activa"),
 
+	/** Estado que indica que la tarjeta ha sido bloqueada temporal o permanentemente. */
 	BLOQUEADA("Bloqueada"),
 
+	/** Estado que indica que la tarjeta se encuentra cancelada. */
 	CANCELADA("Cancelada");
 
+	/** Etiqueta descriptiva asociada al estado. */
 	private final String etiqueta;
 
+	/**
+	 * Constructor del enum para inicializar la etiqueta descriptiva.
+	 * 
+	 * @param etiqueta Texto descriptivo del estado.
+	 */
 	EstadoTarjeta(String etiqueta) {
 		this.etiqueta = etiqueta;
 	}
 
+	/**
+	 * Obtiene la etiqueta descriptiva del estado.
+	 * 
+	 * @return La etiqueta en formato de texto.
+	 */
 	public String getEtiqueta() {
 		return etiqueta;
 	}
 
 	/**
-	 * Convierte el valor guardado en la base de datos a su constante.
+	 * Convierte el valor guardado en la base de datos a su respectiva constante del enum.
 	 *
-	 * @param valor texto almacenado en la columna {@code estado}
-	 * @return la constante correspondiente
-	 * @throws IllegalArgumentException si el valor es nulo o no es un estado válido
+	 * @param valor Texto almacenado en la columna de estado de la base de datos.
+	 * @return La constante del enum correspondiente.
+	 * @throws IllegalArgumentException si el valor es nulo, en blanco o no corresponde a un estado válido.
 	 */
 	public static EstadoTarjeta desdeBD(String valor) {
 		if (valor == null || valor.isBlank()) {
@@ -37,9 +54,9 @@ public enum EstadoTarjeta {
 	}
 
 	/**
-	 * Texto que se muestra en el formulario (combo y resultados).
+	 * Retorna el texto que se muestra en la interfaz de usuario (como en los ComboBox y resultados).
 	 *
-	 * @return la etiqueta del estado
+	 * @return La etiqueta descriptiva del estado.
 	 */
 	@Override
 	public String toString() {
